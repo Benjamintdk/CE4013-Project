@@ -39,5 +39,7 @@ private void monitorUpdates(String filename,
 Started on command with the server's IP address, port number, as well as freshness interval t for caching purposes. 
 
 (1) Client-side caching 
+
 (2) Prints server's replies on screen
+
 (3) Option for user to terminate connection after each request 
