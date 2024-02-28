@@ -1,4 +1,5 @@
 package src;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -45,27 +46,27 @@ public class Marshaller {
         return combined;
     }
 
-    public byte[] marshall(Integer message) {
+    public static byte[] marshall(Integer message) {
         return intToBytes(message);
     }
 
-    public byte[] marshall(String message) {
+    public static byte[] marshall(String message) {
         return stringToBytes(message);
     }
 
-    public byte[] marshall(File file) {
+    public static byte[] marshall(File file) {
         return fileToBytes(file);
     }
 
-    public String unmarshallString(byte[] message) {
+    public static String unmarshallString(byte[] message) {
         return bytesToString(message);
     }
 
-    public Integer unmarshallInteger(byte[] message) {
+    public static Integer unmarshallInteger(byte[] message) {
         return bytesToInteger(message);
     }
 
-    public File unmarshallFile(byte[] file) {
+    public static File unmarshallFile(byte[] file) {
         return bytesToFile(file);
     }
 }
