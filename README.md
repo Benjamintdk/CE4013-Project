@@ -30,9 +30,9 @@ private void monitorUpdates(String filename,
 }
 ```
 
-(4) Some idempotent method (delete file)
+(4) Some idempotent method (create new file)
 
-(5) Some non-idempotent method (delete or append)
+(5) Some non-idempotent method (append to end of file)
 
 ### Client class
 
