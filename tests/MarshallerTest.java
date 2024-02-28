@@ -68,5 +68,6 @@ public class MarshallerTest {
         // assert
         assertEquals(a.getFileName(), aUnmarshalled.getFileName());
         assertEquals(a.getFileContent(), aUnmarshalled.getFileContent());
+        assertEquals(a.getTimeLastModified(), aUnmarshalled.getTimeLastModified());
     }
 }

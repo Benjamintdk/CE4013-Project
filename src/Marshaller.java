@@ -9,8 +9,12 @@ public class Marshaller {
         return new String(message);
     }
 
-    private static Integer bytesToInteger(byte[] message) {
+    private static int bytesToInteger(byte[] message) {
         return ByteBuffer.wrap(message).getInt();
+    }
+
+    private static long bytesToLong(byte[] message) {
+        return ByteBuffer.wrap(message).getLong();
     }
 
     private static File bytesToFile(byte[] file) {
@@ -20,7 +24,10 @@ public class Marshaller {
                 Arrays.copyOfRange(file, Integer.BYTES + fileNameLength, (2 * Integer.BYTES) + fileNameLength));
         String fileContent = bytesToString(Arrays.copyOfRange(file, (2 * Integer.BYTES) + fileNameLength,
                 (2 * Integer.BYTES) + fileNameLength + fileContentLength));
-        return new File(fileName, fileContent);
+        long fileTimeLastModified = bytesToLong(
+                Arrays.copyOfRange(file, (2 * Integer.BYTES) + fileNameLength + fileContentLength,
+                        (2 * Integer.BYTES) + fileNameLength + fileContentLength + Long.BYTES));
+        return new File(fileName, fileContent, fileTimeLastModified);
 
     }
 
@@ -28,8 +35,12 @@ public class Marshaller {
         return message.getBytes();
     }
 
-    private static byte[] intToBytes(Integer value) {
+    private static byte[] intToBytes(int value) {
         return ByteBuffer.allocate(Integer.BYTES).putInt(value).array();
+    }
+
+    private static byte[] longToBytes(long value) {
+        return ByteBuffer.allocate(Long.BYTES).putLong(value).array();
     }
 
     private static byte[] fileToBytes(File file) {
@@ -37,21 +48,28 @@ public class Marshaller {
         byte[] fileNameLength = intToBytes(fileName.length);
         byte[] fileContent = stringToBytes(file.getFileContent());
         byte[] fileContentLength = intToBytes(fileContent.length);
+        byte[] fileLastModifiedTime = longToBytes(file.getTimeLastModified());
 
-        byte[] combined = new byte[(2 * Integer.BYTES) + fileName.length + fileContent.length];
+        byte[] combined = new byte[Long.BYTES + (2 * Integer.BYTES) + fileName.length + fileContent.length];
         System.arraycopy(fileNameLength, 0, combined, 0, Integer.BYTES);
         System.arraycopy(fileName, 0, combined, Integer.BYTES, fileName.length);
         System.arraycopy(fileContentLength, 0, combined, Integer.BYTES + fileName.length, Integer.BYTES);
         System.arraycopy(fileContent, 0, combined, (2 * Integer.BYTES) + fileName.length, fileContent.length);
+        System.arraycopy(fileLastModifiedTime, 0, combined, (2 * Integer.BYTES) + fileName.length + fileContent.length,
+                Long.BYTES);
         return combined;
     }
 
-    public static byte[] marshall(Integer message) {
+    public static byte[] marshall(int message) {
         return intToBytes(message);
     }
 
     public static byte[] marshall(String message) {
         return stringToBytes(message);
+    }
+
+    public static byte[] marshall(long message) {
+        return longToBytes(message);
     }
 
     public static byte[] marshall(File file) {
@@ -62,8 +80,12 @@ public class Marshaller {
         return bytesToString(message);
     }
 
-    public static Integer unmarshallInteger(byte[] message) {
+    public static int unmarshallInteger(byte[] message) {
         return bytesToInteger(message);
+    }
+
+    public static long unmarshallLong(byte[] message) {
+        return bytesToLong(message);
     }
 
     public static File unmarshallFile(byte[] file) {

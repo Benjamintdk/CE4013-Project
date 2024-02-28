@@ -52,21 +52,32 @@ To marshall any data, we simply call the *marshall method*:
 
 ```Marshaller.marshall(your_data)```
 
-Currently, the types of supported data types for marshalling are integers, strings and [File](#file). This was implemented using method overloading. 
+Currently, the types of supported data types for marshalling are integers, longs, strings and [File](#file). This was implemented using method overloading. 
 
-To unmarshall any data, we need to know the datatype which we are unmarshalling to beforehand. Similarly as before, there are the 3 supported data types that can be unmarshalled. All unmarshalling methods receive a byte array (`byte[]`) as a parameter. 
+To unmarshall any data, we need to know the datatype which we are unmarshalling to beforehand. Similarly as before, there are the 4 supported data types that can be unmarshalled. All unmarshalling methods receive a byte array (`byte[]`) as a parameter. 
 
 ```
 /* Unmarshall file */
 File newFile = Marshaller.unmarshellFile(your_file_bytes)
 
 /* Unmarshall string */
-File newFile = Marshaller.unmarshellString(your_string_bytes)
+String message = Marshaller.unmarshellString(your_string_bytes)
 
 /* Unmarshall integer */
-File newFile = Marshaller.unmarshellInteger(your_integer_bytes)
+int value = Marshaller.unmarshellInteger(your_integer_bytes)
+
+/* Unmarshall long */
+long value = Marshaller.unmarshellLong(your_long_bytes)
 ```
 
 ### File
 
-The *File* class is used to create a basic File object. It requires `fileName` and `fileContent` as attributes to be initialized. 
+The *File* class is used to create a basic File object. There are 2 ways to initialize it:
+
+```
+/* Initialization without timeLastModified */
+public File(String fileName, String fileContent, long timeLastModified)
+
+/* If timeLastModified is not provided, current system time is used*/
+public File(String fileName, String fileContent)
+```
