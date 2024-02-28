@@ -5,14 +5,14 @@ import java.lang.Math;
 
 public class FileHandler {
 
-    public static void writeFile(String fileName) {
+    public static void writeToFile(String fileName) {
         /*
          * TO-DO:
          * This needs implementation without using any Java I/O utilities
          */
     }
 
-    public static File readFile(String fileName) {
+    public static File readFromFile(String fileName) {
         /*
          * TO-DO:
          * This needs implementation without using any Java I/O utilities

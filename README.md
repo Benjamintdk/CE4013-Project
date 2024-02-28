@@ -70,14 +70,31 @@ int value = Marshaller.unmarshellInteger(your_integer_bytes)
 long value = Marshaller.unmarshellLong(your_long_bytes)
 ```
 
+### FileHandler
+
+The *FileHandler* class is the class responsible for handling all utilities relating to file I/O operations. All methods from this class are static. 
+
+The static methods in this class include:
+
+1) readFromFile
+2) writeToFile
+3) getFileContent
+4) updateFileContent
+
 ### File
 
-The *File* class is used to create a basic File object. There are 2 ways to initialize it:
+The *File* class is a container class to hold all attributes of a class. The 3 attributes of a *File* object are:
+
+1) fileName
+2) fileContent
+3) timeLastModified
+
+There are 2 possible ways to initialize it:
 
 ```
-/* Initialization without timeLastModified */
-public File(String fileName, String fileContent, long timeLastModified)
-
-/* If timeLastModified is not provided, current system time is used*/
+/* Standard Initialization - client should always use this constructor */
 public File(String fileName, String fileContent)
+
+/* This constructor is protected and can only be used within the src.utils package. Client and server should not need to interact directly with this constructor. */
+public File(String fileName, String fileContent, long timeLastModified)
 ```
