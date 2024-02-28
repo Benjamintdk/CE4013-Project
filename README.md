@@ -43,3 +43,30 @@ Started on command with the server's IP address, port number, as well as freshne
 (2) Prints server's replies on screen
 
 (3) Option for user to terminate connection after each request 
+
+### Marshalling 
+
+The *Marshaller* is the class responsible for performing all marshalling and unmarshalling of data. All methods from this class are static. 
+
+To marshall any data, we simply call the *marshall method*:
+
+```Marshaller.marshall(your_data)```
+
+Currently, the types of supported data types for marshalling are integers, strings and [File](#file). This was implemented using method overloading. 
+
+To unmarshall any data, we need to know the datatype which we are unmarshalling to beforehand. Similarly as before, there are the 3 supported data types that can be unmarshalled. All unmarshalling methods receive a byte array (`byte[]`) as a parameter. 
+
+```
+/* Unmarshall file */
+File newFile = Marshaller.unmarshellFile(your_file_bytes)
+
+/* Unmarshall string */
+File newFile = Marshaller.unmarshellString(your_string_bytes)
+
+/* Unmarshall integer */
+File newFile = Marshaller.unmarshellInteger(your_integer_bytes)
+```
+
+### File
+
+The *File* class is used to create a basic File object. It requires `fileName` and `fileContent` as attributes to be initialized. 
