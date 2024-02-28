@@ -1,8 +1,8 @@
 package tests;
 
 import static org.junit.Assert.assertEquals;
-import src.Marshaller;
-import src.File;
+import src.utils.Marshaller;
+import src.utils.File;
 
 import org.junit.Test;
 
