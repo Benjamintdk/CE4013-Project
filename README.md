@@ -1,38 +1,51 @@
 # CE4013 Group Project AY 23/24
 
-### Server class
-(1) Reads some number of bytes from given file at a specified offset. Returns a byte array
-```
-private byte[] readFile(String filename,
-                       Integer offset,
-                       Integer bytesToRead) {
-                        
-    // must handle error message from non-existent file with given filename
-}
-```
+# Server Implementation Details
 
-(2) Inserts some number of bytes into a given file at a specified offset. 
-```
-private int insertContent(String filename,
-                          Integer offset,
-                          Byte[] bytesToInsert) {
-                        
-    // must handle error message from non-existent file with given filename
-    // must handle error message if offset > file length
-}
-```
+This document provides an overview of the server class implementation for remote file access based on a client-server architecture. The server supports various file operations executed through UDP communication. 
 
-(3) Monitors updates to a given file at a within a given time interval, sending updated file content to the client everytime another client updates it
-```
-private void monitorUpdates(String filename,
-                            Integer monitorInterval) {
-    // must handle error message from non-existent file with given filename
-}
-```
+## Server Class Overview
 
-(4) Some idempotent method (create new file)
+The server maintains several key data structures for operation handling and invocation semantics:
 
-(5) Some non-idempotent method (append to end of file)
+- **monitorSubscriptions**: Tracks clients monitoring file updates.
+- **requestHistory**: Caches responses for idempotent operations to support "at-most-once" semantics.
+- **responseCache**: Helps keep track of handled request IDs and their corresponding responses.
+
+## Key Methods
+
+### Starting the Server
+
+- **listen()**: The server listens for incoming UDP packets. It distinguishes requests based on invocation semantics ("at-least-once" or "at-most-once") and handles operations accordingly.
+
+### Operation Handling
+
+- **handleReadOperation()**: Reads a specified number of bytes from a file at a given offset. Errors are handled for non-existent files.
+- **handleInsertOperation()**: Inserts a byte array into a file at a specified offset. Errors are managed for non-existent files and offsets beyond the file length.
+- **handleMonitorOperation()**: Monitors updates to a file within a given interval, sending updated content to clients after any update.
+- **handleGetFileInfo()**: An idempotent operation that retrieves information about a file.
+- **handleAppendContent()**: A non-idempotent operation that appends content to the end of a file.
+
+### Response Handling
+
+- **sendPacket()**: Sends a UDP packet to a client address and port.
+- **sendErrorResponse()**: Sends an error message to the client if an operation fails.
+- **cacheResponse()**: Caches the response for a given request ID to support "at-most-once" semantics.
+
+## Invocation Semantics
+
+The server supports two invocation semantics:
+
+- **At-least-once**: The server processes every incoming request, including duplicates. Suitable for idempotent operations.
+- **At-most-once**: The server checks for duplicate requests using a request history and serves cached responses when duplicates are detected. It prevents the server from performing operations multiple times.
+
+## Running the Server
+
+To start the server, use the command:
+
+```bash
+java Server <port number> <invocation semantics>
+```
 
 ### Client class
 
