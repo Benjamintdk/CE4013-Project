@@ -22,7 +22,7 @@ public class FileHandler {
 
     }
 
-    public static byte[] readFromFile(String fileName) throws IOException, {
+    public static byte[] readFromFile(String fileName) throws IOException {
         FileInputStream fis = null;
         byte[] buffer = null;
         try {
