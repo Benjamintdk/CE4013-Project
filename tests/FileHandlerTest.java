@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.lang.StringIndexOutOfBoundsException;
 import src.utils.FileHandler;
-import src.utils.File;
+import src.utils.InMemoryFile;
 
 import org.junit.Test;
 
@@ -15,7 +15,7 @@ public class FileHandlerTest {
     @Test
     public void TestUpdateFileContent() {
         // arrange
-        File a = new File("File1", "This is a new file");
+        InMemoryFile a = new InMemoryFile("File1", "This is a new file");
         /* Successful attempt at update */
         long curTimeModified = a.getTimeLastModified();
         // act
@@ -36,7 +36,7 @@ public class FileHandlerTest {
     @Test
     public void TestGetFileContent() {
         // arrange
-        File a = new File("File1", "This is a new file");
+        InMemoryFile a = new InMemoryFile("File1", "This is a new file");
         /* Successful attempt at read */
         // act
         String message = FileHandler.getFileContent(a, 5, 13);

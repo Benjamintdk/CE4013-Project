@@ -1,17 +1,17 @@
 package src.utils;
 
-public class File {
+public class InMemoryFile {
     private String fileName;
     private String fileContent;
     private long timeLastModified;
 
-    public File(String fileName, String fileContent) {
+    public InMemoryFile(String fileName, String fileContent) {
         this.fileName = fileName;
         this.fileContent = fileContent;
         this.timeLastModified = System.currentTimeMillis();
     }
 
-    protected File(String fileName, String fileContent, long timeLastModified) {
+    protected InMemoryFile(String fileName, String fileContent, long timeLastModified) {
         this.fileName = fileName;
         this.fileContent = fileContent;
         this.timeLastModified = timeLastModified;

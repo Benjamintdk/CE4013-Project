@@ -2,7 +2,7 @@ package tests;
 
 import static org.junit.Assert.assertEquals;
 import src.utils.Marshaller;
-import src.utils.File;
+import src.utils.InMemoryFile;
 
 import org.junit.Test;
 
@@ -57,11 +57,11 @@ public class MarshallerTest {
 
     @Test
     public void TestMarshallFile() {
-        File a, aUnmarshalled;
+        InMemoryFile a, aUnmarshalled;
         byte[] aMarshalled;
 
         // arrange
-        a = new File("File1", "This is a new file");
+        a = new InMemoryFile("File1", "This is a new file");
         // act
         aMarshalled = Marshaller.marshall(a);
         aUnmarshalled = Marshaller.unmarshallFile(aMarshalled);

@@ -1,27 +1,49 @@
 package src.utils;
 
 import java.lang.StringIndexOutOfBoundsException;
+import java.io.*;
 import java.lang.Math;
 
 public class FileHandler {
 
-    public static void writeToFile(String fileName) {
-        /*
-         * TO-DO:
-         * This needs implementation without using any Java I/O utilities
-         */
+    public static void writeToFile(String fileName, byte[] content) throws IOException {
+        FileOutputStream fos = null;
+        try {
+            File file = new File(fileName);
+            fos = new FileOutputStream(file);
+            for (byte b : content) {
+                fos.write(b);
+            }
+        } finally {
+            if (fos != null) {
+                fos.close();
+            }
+        }
+
     }
 
-    public static File readFromFile(String fileName) {
-        /*
-         * TO-DO:
-         * This needs implementation without using any Java I/O utilities
-         * Must also implement error handling for possible non-existence of file
-         */
-        return new File(fileName, "");
+    public static byte[] readFromFile(String fileName) throws IOException, {
+        FileInputStream fis = null;
+        byte[] buffer = null;
+        try {
+            File file = new File(fileName);
+            fis = new FileInputStream(file);
+            int fileLength = (int) file.length();
+            buffer = new byte[fileLength];
+            int bytesRead = 0;
+            int offset = 0;
+            while (offset < fileLength && (bytesRead = fis.read(buffer, offset, fileLength - offset)) >= 0) {
+                offset += bytesRead;
+            }
+        } finally {
+            if (fis != null) {
+                fis.close();
+            }
+        }
+        return buffer;
     }
 
-    public static String getFileContent(File file, int offset, int numBytesToRead) {
+    public static String getFileContent(InMemoryFile file, int offset, int numBytesToRead) {
         if (offset > file.getFileContent().length()) {
             throw new StringIndexOutOfBoundsException("Offset provided exceeds the current file length");
         }
@@ -29,7 +51,7 @@ public class FileHandler {
                 Math.min(offset + numBytesToRead, file.getFileContent().length()));
     }
 
-    public static void updateFileContent(File file, int offset, String newContent) {
+    public static void updateFileContent(InMemoryFile file, int offset, String newContent) {
         if (offset > file.getFileContent().length()) {
             throw new StringIndexOutOfBoundsException("Offset provided exceeds the current file length");
         }
