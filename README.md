@@ -57,6 +57,17 @@ Started on command with the server's IP address, port number, as well as freshne
 
 (3) Option for user to terminate connection after each request 
 
+## Running the Client
+
+To start the client, use the command:
+
+```bash
+java Client <ServerIP> <ServerPort> <InvocationSemanticFlag> <FreshnessInterval>
+```
+
+InvocationSemanticFlag : 0 = at-least-once ; 1 = at-mpost-once
+FreshnessInterval : in seconds
+
 ### Marshalling 
 
 The *Marshaller* is the class responsible for performing all marshalling and unmarshalling of data. All methods from this class are static. 
