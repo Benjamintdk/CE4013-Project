@@ -4,13 +4,60 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.lang.StringIndexOutOfBoundsException;
 import src.utils.FileHandler;
 import src.utils.InMemoryFile;
+import src.utils.Marshaller;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import org.junit.Test;
 
 public class FileHandlerTest {
+
+    @Test
+    public void TestWriteFile() {
+        // arrange
+        String content = "testing file";
+        String fileName = "test_file";
+        // act
+        FileHandler.writeToFile(fileName, Marshaller.marshall(content));
+        // assert
+        Path path = Paths.get(fileName);
+        assertTrue(Files.exists(path));
+        try {
+            byte[] data = Files.readAllBytes(path);
+            String readContent = Marshaller.unmarshallString(Arrays.copyOfRange(data, 0, data.length - Long.BYTES));
+            assertEquals(readContent, content);
+            Files.delete(path);
+        } catch (IOException e) {
+            System.out.println("Unable to delete file.");
+        }
+
+    }
+
+    @Test
+    public void TestReadFile() {
+        // arrange
+        String content = "testing file";
+        String fileName = "test_file";
+        FileHandler.writeToFile(fileName, Marshaller.marshall(content));
+        Path path = Paths.get(fileName);
+        // act
+        InMemoryFile testFile = FileHandler.readFromFile(fileName);
+        // assert
+        assertEquals(testFile.getFileName(), fileName);
+        assertEquals(testFile.getFileContent(), content);
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            System.out.println("Unable to delete file.");
+        }
+    }
 
     @Test
     public void TestUpdateFileContent() {
