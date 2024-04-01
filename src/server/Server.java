@@ -4,6 +4,9 @@ import src.utils.FileHandler;
 import src.utils.InMemoryFile;
 import src.utils.Marshaller;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -107,7 +110,11 @@ public class Server {
           buffer.get(filenameBytes);
           String filename = new String(filenameBytes);
           int offset = buffer.getInt();
-          int bytesToRead = buffer.getInt();
+          int lengthofbytesToRead = buffer.getInt();;
+          byte[] bytesToReadBytes = new byte[lengthofbytesToRead];
+          buffer.get(bytesToReadBytes);
+          String bytesToReadString = new String(bytesToReadBytes);
+          int bytesToRead = Integer.parseInt(bytesToReadString.trim());
   
           byte[] fileData = FileHandler.readFromFile(filename);
           if (fileData != null) {
@@ -266,21 +273,46 @@ public class Server {
             System.err.println("Failed to send error response: " + e.getMessage());
         }
     }
-  
-    public static void main(String[] args) {
-      if (args.length != 2) {
-          System.err.println("Usage: java Server <port number> <invocation semantics>");
-          System.exit(1);
-      }
-      int port = Integer.parseInt(args[0]);
-      String semantics = args[1]; // "at-least-once" or "at-most-once"
+    
+    private static void createInitialFiles(String[] fileNames) {
+        for (String fileName : fileNames) {
+            try {
+                Path path = Paths.get(fileName);
+                Files.createFile(path);
+                System.out.println("Created file: " + path.toAbsolutePath());
 
-      try {
-          Server server = new Server(port, semantics);
-          server.listen();
-      } catch (Exception e) {
-          System.err.println("Server failed to start: " + e.getMessage());
-          e.printStackTrace();
-      }
-  }
+                // Check and confirm file creation
+                if(Files.exists(path)) {
+                    System.out.println("Confirmation: File exists - " + path.toAbsolutePath());
+                } else {
+                    System.err.println("File creation failed for unknown reasons.");
+                }
+            } catch (IOException e) {
+                System.err.println("Could not create file " + fileName + ": " + e.getMessage());
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        // if (args.length != 2) {
+        //     System.err.println("Usage: java Server <port number> <invocation semantics>");
+        //     System.exit(1);
+        // }
+        // int port = Integer.parseInt(args[0]);
+        // String semantics = args[1]; // "at-least-once" or "at-most-once"
+        int port = 2002;
+        String semantics = "at-least-once";
+
+        // File names to create
+        String[] fileNames = {"file1", "file2", "file3"};
+        createInitialFiles(fileNames);
+
+        try {
+            Server server = new Server(port, semantics);
+            server.listen();
+        } catch (Exception e) {
+            System.err.println("Server failed to start: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
