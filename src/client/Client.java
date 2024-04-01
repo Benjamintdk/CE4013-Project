@@ -155,6 +155,13 @@ public class Client {
                 System.out.println("5 - Append file content");
                 System.out.println("0 - Exit");
                 System.out.print("Enter choice: ");
+
+                while (!scanner.hasNextInt()) { // Check if the next input is an integer
+                    System.out.println("Please enter a valid number");
+                    scanner.next(); // Consume the invalid input
+                    System.out.print("Enter choice: ");
+                }
+
                 int choice = scanner.nextInt();
                 scanner.nextLine(); // consume newline
 
