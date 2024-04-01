@@ -1,6 +1,7 @@
 package src.utils;
 
 import java.lang.StringIndexOutOfBoundsException;
+import java.util.Arrays;
 import java.io.*;
 import java.lang.Math;
 
@@ -14,30 +15,39 @@ public class FileHandler {
             for (byte b : content) {
                 fos.write(b);
             }
+            long timeLastModified = System.currentTimeMillis();
+            fos.write(Marshaller.marshall(timeLastModified));
             fos.close();
         } catch (IOException e) {
             System.out.println("Unable to read file: " + e.getMessage());
         }
     }
 
-    public static byte[] readFromFile(String fileName) {
+    public static InMemoryFile readFromFile(String fileName) {
         FileInputStream fis = null;
         byte[] buffer = null;
+        InMemoryFile readFile = null;
         try {
             File file = new File(fileName);
             fis = new FileInputStream(file);
             int fileLength = (int) file.length();
+            int fileContentLength = fileLength - Long.BYTES;
             buffer = new byte[fileLength];
             int bytesRead = 0;
             int offset = 0;
-            while (offset < fileLength && (bytesRead = fis.read(buffer, offset, fileLength - offset)) >= 0) {
+            while (offset < fileLength
+                    && (bytesRead = fis.read(buffer, offset, fileLength - offset)) >= 0) {
                 offset += bytesRead;
             }
+            String fileContent = Marshaller.unmarshallString(Arrays.copyOfRange(buffer, 0, fileContentLength));
+            long timeLastModified = Marshaller
+                    .unmarshallLong(Arrays.copyOfRange(buffer, fileContentLength, fileLength));
             fis.close();
+            readFile = new InMemoryFile(fileName, fileContent, timeLastModified);
         } catch (IOException e) {
             System.out.println("Unable to read file: " + e.getMessage());
         }
-        return buffer;
+        return readFile;
     }
 
     public static String getFileContent(InMemoryFile file, int offset, int numBytesToRead) {
