@@ -6,7 +6,7 @@ import java.lang.Math;
 
 public class FileHandler {
 
-    public static void writeToFile(String fileName, byte[] content) throws IOException {
+    public static void writeToFile(String fileName, byte[] content) {
         FileOutputStream fos = null;
         try {
             File file = new File(fileName);
@@ -14,15 +14,13 @@ public class FileHandler {
             for (byte b : content) {
                 fos.write(b);
             }
-        } finally {
-            if (fos != null) {
-                fos.close();
-            }
+            fos.close();
+        } catch (IOException e) {
+            System.out.println("Unable to read file: " + e.getMessage());
         }
-
     }
 
-    public static byte[] readFromFile(String fileName) throws IOException {
+    public static byte[] readFromFile(String fileName) {
         FileInputStream fis = null;
         byte[] buffer = null;
         try {
@@ -35,10 +33,9 @@ public class FileHandler {
             while (offset < fileLength && (bytesRead = fis.read(buffer, offset, fileLength - offset)) >= 0) {
                 offset += bytesRead;
             }
-        } finally {
-            if (fis != null) {
-                fis.close();
-            }
+            fis.close();
+        } catch (IOException e) {
+            System.out.println("Unable to read file: " + e.getMessage());
         }
         return buffer;
     }
