@@ -222,7 +222,7 @@ public class Client {
 
         scanner.nextLine(); // consume newline
 
-        String cacheName = filename + "readFile";
+        String cacheName = filename + "readFile" + String.valueOf(offset) + string_bytesToRead;
 
         // Check cache first
         if (cache.containsKey(cacheName) && isCacheFresh(cacheName)) {
