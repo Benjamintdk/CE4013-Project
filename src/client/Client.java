@@ -218,6 +218,8 @@ public class Client {
             bytesToRead = scanner.nextInt();
         }
 
+        String string_bytesToRead = String.valueOf(bytesToRead);
+
         scanner.nextLine(); // consume newline
 
         String cacheName = filename + "readFile";
@@ -229,7 +231,7 @@ public class Client {
             // Proceed to fetch from the server and update cache
             // Construct and send the request
             try {
-                sendRequest(1, filename, offset, null, requestId); // Adjust as necessary for each operation
+                sendRequest(1, filename, offset, string_bytesToRead, requestId);
                 receiveResponse(cacheName); // Handle the response appropriately
             } catch (Exception e) {
                 System.err.println("Error during operation: " + e.getMessage());
