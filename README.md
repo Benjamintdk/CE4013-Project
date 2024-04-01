@@ -2,7 +2,7 @@
 
 # Server Implementation Details
 
-This document provides an overview of the server class implementation for remote file access based on a client-server architecture. The server supports various file operations executed through UDP communication. 
+This section provides an overview of the server class implementation for remote file access based on a client-server architecture. The server supports various file operations executed through UDP communication. 
 
 ## Server Class Overview
 
@@ -49,24 +49,67 @@ java Server <port number> <invocation semantics>
 
 ### Client class
 
-Started on command with the server's IP address, port number, as well as freshness interval t for caching purposes. 
+This section provides an overview of the client class implementation for remote file access based on a client-server architecture. The Client class is designed to communicate with a server via UDP to perform a variety of file operations. It offers an interactive interface for users, enabling them to execute different operations on files stored on the server.
 
-(1) Client-side caching 
+## Client Class Overview
 
-(2) Prints server's replies on screen
+The client maintains several key data structures for managing communication with the server, handling user operation requests, implementing client-side caching, and managing invocation semantics for reliability and fault tolerance:
 
-(3) Option for user to terminate connection after each request 
+- **cache**: A ConcurrentHashMap that implements client-side caching of file contents, allowing users to read "fresh" cached file content directly without contacting the server.
+- **requestHistory**: Tracks processed request IDs to support "at-most-once" semantics.
+- **socket**: A DatagramSocket instance for sending and receiving UDP packets.
+- **serverAddress** and **serverPort**: Server's IP address and port number for establishing communication.
+- **invocationSemantic**: Determines the invocation semantic ("at-least-once" or "at-most-once") for handling requests.
+
+## Key Methods
+
+### Starting the Client
+
+- **start()**: This method initializes the Client, sets up the user interface for selecting file operations, and handles the execution of chosen operations.
+
+### User Interface Options
+
+- **1: Read File Content**: Allows users to input a filename, offset, and the number of bytes to be read within the file.
+- **2: Insert Content into a File**: Allows users to input a filename, offset, and content to be inserted into the file. 
+- **3: Monitor File Updates**: Allows users to input a filename and monitor interval to track any changes to the file during the provided interval duration.
+- **4: Get File Information**: This is the idempotent function implemented by our team. Users can input a filename and will be returned details about the given file.
+- **5: Append File Content**: This is the non-idempotent function implemented by our team. Users can input a filename and the content to be appended to the end of the given file.
+- **0: Exit**: This gives users the options to terminate the client when they are done querying the server. This shuts-down the client cleanly.
+
+### Response Handling
+
+- **sendRequest()** and **prepareRequest**: Prepares and sends a request to the server based on the selected operation, filename, offset, content, and request ID. Supports "at-most-once" semantics by checking the request history.
+- **receiveResponse()**: Receives a response from the server, updates the cache if necessary, and displays the server's reply on the screen.
+
+
+### Operation Handling
+
+- **isCacheFresh()**: Checks if the cached server responses are still 'fresh' in comparison to the pre-entered freshness interval. Ran before requests are sent to the server.
+- **performReadOperation()**, **performInsertOperation()**, **performMonitorOperation()**, **performGetFileInfoOperation()**, **performAppendContentOperation()**: These methods correspond to the user-selected operations. They gather required input from the user and invoke `sendRequest()` with appropriate parameters.
+
+### Client-Side Caching
+
+The client implements caching to enhance performance for read operations. It maintains a cache of recently fetched file contents, checks the freshness of cached data before sending a read request, and updates the cache upon receiving new data from the server.
+
+## Invocation Semantics
+
+The client also supports two invocation semantics:
+
+- **At-least-once**: Ensures that every operation is executed at least once, even at the cost of possible duplication.
+- **At-most-once**: Ensures that operations are executed no more than once, using request history to avoid processing duplicate requests.
+
+This invocation semantics are set when the client is started.
 
 ## Running the Client
 
-To start the client, use the command:
+To start the Client, use the following command, providing the server's IP address, port number, the invocation semantic flag, and the freshness interval for caching:
 
 ```bash
 java Client <ServerIP> <ServerPort> <InvocationSemanticFlag> <FreshnessInterval>
 ```
 
-InvocationSemanticFlag : 0 = at-least-once ; 1 = at-mpost-once
-FreshnessInterval : in seconds
+`InvocationSemanticFlag` : 0 for "at-least-once" ; 1 for "at-most-once"
+`FreshnessInterval` : in seconds
 
 ### Marshalling 
 
