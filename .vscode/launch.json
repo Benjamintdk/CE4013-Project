@@ -1,0 +1,62 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Client",
+            "request": "launch",
+            "mainClass": "src.client.Client",
+            "projectName": "CE4013-project_9ad1dcf9",
+            "args": "172.17.51.2 2002 0 30"
+        },
+        {
+            "type": "java",
+            "name": "Server",
+            "request": "launch",
+            "mainClass": "src.server.Server",
+            "projectName": "CE4013-project_9ad1dcf9",
+            "args": "2002 at-least-once"
+        },
+        {
+            "type": "java",
+            "name": "Server",
+            "request": "launch",
+            "mainClass": "src.server.Server",
+            "projectName": "CE4013-project_4bfbbeba",
+            "args": "2002 at-least-once"
+        },
+        {
+            "type": "java",
+            "name": "Client",
+            "request": "launch",
+            "mainClass": "src.client.Client",
+            "projectName": "CE4013-project_4bfbbeba",
+            "args": "172.17.51.2 2002 0 30"
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Client",
+            "request": "launch",
+            "mainClass": "src.client.Client",
+            "projectName": "CE4013-Project_1fd60710",
+            "args": "172.17.51.2 2002 0 30"
+        },
+        {
+            "type": "java",
+            "name": "Server",
+            "request": "launch",
+            "mainClass": "src.server.Server",
+            "projectName": "CE4013-Project_1fd60710",
+            "args": "2002 at-least-once"
+        }
+    ]
+}
