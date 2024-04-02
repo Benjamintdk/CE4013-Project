@@ -10,6 +10,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.UUID;
 import java.util.Random;
 import java.util.concurrent.*;
 
@@ -35,6 +36,8 @@ public class Client {
     private DatagramSocket socket;
     private InetAddress serverAddress;
     private int serverPort;
+
+    private String uniqueID = UUID.randomUUID().toString();
 
     // 1 : at-most-once
     // 0 : at-least-once
@@ -65,9 +68,10 @@ public class Client {
 
 
     // implementing marshalling & sending requests
-    private byte[] prepareRequest(int operationCode, String filename, int offset, String content, int requestId) throws Exception {
+    private byte[] prepareRequest(int operationCode, String filename, int offset, String content, String requestId) throws Exception {
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + 1 + Integer.BYTES + filename.length() + Integer.BYTES + (content != null ? content.length() : 0) + Integer.BYTES);
-        buffer.putInt(requestId); // Unique request ID for at-most-once invocation semantics
+        buffer.putInt(requestId.length()); // requestID length
+        buffer.put(requestId.getBytes()); // Unique request ID for at-most-once invocation semantics
         buffer.put((byte)operationCode); // Operation code
         buffer.putInt(filename.length()); // Filename length
         buffer.put(filename.getBytes()); // Filename
@@ -83,49 +87,7 @@ public class Client {
         return buffer.array();
     }
 
-    // public void sendRequest(int operationCode, String filename, int offset, String content, int requestId) throws Exception {
-
-    //     // 1 : at-most-once
-    //     // 0 : at-least-once
-    //     if (invocationSemantic == 1 && requestHistory.containsKey(requestId)) {
-    //         System.out.println("Request ID " + requestId + " has already been processed.");
-    //         return;
-    //     }
-
-    //     byte[] requestBytes = prepareRequest(operationCode, filename, offset, content, requestId);
-    //     DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
-        
-    //     boolean isSuccessful = false;
-    //     double lossProbability = 0.1; // 10% probability for loss
-    //     Random rand = new Random();
-        
-    //     while(!isSuccessful) {
-    //         try {
-    //             Double prob = rand.nextDouble();
-
-    //             String temp = String.valueOf(prob);
-    //             System.out.println(temp);
-
-    //             if (prob >= lossProbability){
-    //                 System.out.println("Client Request Sent!");
-    //                 socket.send(requestPacket);
-    //             } else {
-    //                 System.out.println("Client Request Dropped: Simulated Packet Loss");
-    //             }
-
-    //             socket.setSoTimeout(5000); // Set a 5-second timeout for the response
-    //             requestHistory.put(requestId, true);
-    //             isSuccessful = true;
-                
-    //         } catch (SocketTimeoutException e) {
-    //             System.out.println("Timeout reached, retrying...");
-    //             continue;
-    //         }    
-    //     }
-        
-    // }
-
-    public void sendRequest(int operationCode, String filename, int offset, String content, int requestId) throws Exception {
+    public void sendRequest(int operationCode, String filename, int offset, String content, String requestId) throws Exception {
         byte[] requestBytes = prepareRequest(operationCode, filename, offset, content, requestId);
         DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
     
@@ -279,9 +241,11 @@ public class Client {
 
     // THE FUNCTIONS
     private void performReadOperation(int requestId) {
+        String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
+
         System.out.println("Enter filename:");
         String filename = scanner.nextLine();
-        
+
         int offset = -1;
         while (offset < 0) {
             System.out.println("Enter offset:");
@@ -318,7 +282,7 @@ public class Client {
                 boolean success = false;
 
                 while (!success) {
-                    sendRequest(1, filename, offset, string_bytesToRead, requestId);
+                    sendRequest(1, filename, offset, string_bytesToRead, uniqueReq);
                     success = receiveResponse(filename, 1, offset, string_bytesToRead);
                 }
             } catch (Exception e) {
@@ -329,6 +293,8 @@ public class Client {
     
 
     private void performInsertOperation(int requestId) {
+        String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
+
         System.out.println("Enter filename:");
         String filename = scanner.nextLine();
 
@@ -353,7 +319,7 @@ public class Client {
             boolean success = false;
 
                 while (!success) {
-                    sendRequest(2, filename, offset, content, requestId);
+                    sendRequest(2, filename, offset, content, uniqueReq);
                     success = receiveResponse(filename, 1, offset, content);
                 }
         } catch (Exception e) {
@@ -363,6 +329,8 @@ public class Client {
 
 
     private void performMonitorOperation(int requestId) {
+        String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
+
         System.out.println("Enter filename to monitor:");
         String filename = scanner.nextLine();
 
@@ -384,7 +352,7 @@ public class Client {
     
         try {
             // Preparing and sending the monitor request
-            sendRequest(3, filename, monitorInterval, "", requestId); // Empty string for content as it's not needed
+            sendRequest(3, filename, monitorInterval, "", uniqueReq); // Empty string for content as it's not needed
     
             // Starting a new thread to listen for updates
             new Thread(() -> {
@@ -406,6 +374,8 @@ public class Client {
 
 
     private void performGetFileInfoOperation(int requestId) {
+        String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
+
         System.out.println("Enter filename to get info:");
         String filename = scanner.nextLine();
 
@@ -419,7 +389,7 @@ public class Client {
                 boolean success = false;
 
                 while (!success) {
-                    sendRequest(4, filename, 0, null, requestId); // Offset and content are not needed here.
+                    sendRequest(4, filename, 0, null, uniqueReq); // Offset and content are not needed here.
                     receiveResponse(filename, 4, 0, null);
                 }
             } catch (Exception e) {
@@ -430,6 +400,8 @@ public class Client {
     
     
     private void performAppendContentOperation(int requestId) {
+        String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
+
         System.out.println("Enter filename to append content:");
         String filename = scanner.nextLine();
         System.out.println("Enter content to append:");
@@ -439,7 +411,7 @@ public class Client {
             boolean success = false;
             
             while (!success) {
-                sendRequest(5, filename, 0, content, requestId); // Offset is not needed; assuming append happens at the end.
+                sendRequest(5, filename, 0, content, uniqueReq); // Offset is not needed; assuming append happens at the end.
                 receiveResponse(filename, 5, 0, content);
                 }
         } catch (Exception e) {
