@@ -36,8 +36,8 @@ public class Server {
     private String invocationSemantics; // "at-least-once" or "at-most-once"
 
     private ConcurrentHashMap<String, List<ClientInfo>> monitorSubscriptions;
-    private ConcurrentHashMap<Integer, Long> requestHistory; // caching of the responses for idempotent operations
-    private ConcurrentHashMap<Integer, byte[]> responseCache; // help keep track of handled request IDs
+    private ConcurrentHashMap<String, Long> requestHistory; // caching of the responses for idempotent operations
+    private ConcurrentHashMap<String, byte[]> responseCache; // help keep track of handled request IDs
 
     public Server(int port, String invocationSemantics) throws Exception {
         this.socket = new DatagramSocket(port);
@@ -49,7 +49,7 @@ public class Server {
 
     public void listen() throws Exception {
         Random random = new Random();
-        double lossRate = 0.5;
+        double lossRate = 0.1;
 
         running = true;
         System.out.println("Server is running with " + invocationSemantics + " semantics.");
@@ -65,12 +65,16 @@ public class Server {
             }
 
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
-            int requestId = buffer.getInt(); // extracting the request ID
+            int requestIdLength = buffer.getInt(); // Read requestID length first
+            byte[] requestIdBytes = new byte[requestIdLength];
+            buffer.get(requestIdBytes);
+            String requestId = new String(requestIdBytes); // Convert bytes to string
             byte operationCode = buffer.get(); // extracting the operation code
-
+            
             if ("at-most-once".equals(invocationSemantics) && requestHistory.containsKey(requestId)) {
                 byte[] cachedResponse = responseCache.get(requestId);
                 if (cachedResponse != null) {
+                    System.out.println("Sending cached response to " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
                     sendPacket(cachedResponse, packet.getAddress(), packet.getPort());
                     continue; // we skip the operation processing for this duplicate request under
                               // "at-most-once" semantics
@@ -279,8 +283,17 @@ public class Server {
     // cache the response for a given request
     private void cacheResponse(DatagramPacket requestPacket, byte[] responseBytes) {
         ByteBuffer buffer = ByteBuffer.wrap(requestPacket.getData());
-        int requestId = buffer.getInt(); // request ID is the first element.
-        responseCache.put(requestId, responseBytes); // cache the response
+        
+        // Extract the length of the requestId
+        int requestIdLength = buffer.getInt();
+        
+        // Extract the requestId bytes based on the length and convert to String
+        byte[] requestIdBytes = new byte[requestIdLength];
+        buffer.get(requestIdBytes);
+        String requestId = new String(requestIdBytes);
+        
+        // Use the string requestId to cache the response
+        responseCache.put(requestId, responseBytes); // Use String requestId as the key
     }
 
     private void sendErrorResponse(DatagramPacket packet, String errorMessage) {
