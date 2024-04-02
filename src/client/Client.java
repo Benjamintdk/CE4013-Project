@@ -106,8 +106,6 @@ public class Client {
         socket.send(requestPacket);
         System.out.println("Request sent.");
     }
-    
-
 
     // implementing unmarshalling and receiving responses
     public boolean receiveResponse(String filename, int operationCode, int offset, String content) throws Exception {
@@ -116,6 +114,69 @@ public class Client {
         final DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
 
         socket.setSoTimeout(5000); // Set a 5-second timeout for the response
+
+        try {
+            // System.out.println("before");
+            socket.receive(responsePacket); // This call is blocking
+            responseReceived[0] = true;
+
+            // System.out.println("i hv reached!");
+
+            String response = Marshaller.unmarshallString(Arrays.copyOfRange(responsePacket.getData(), 0, responsePacket.getLength()));
+            
+            if (response.startsWith("Error:")) {
+                System.err.println("Server error: " + response);
+            } else {
+                System.out.println("Server response: " + response);
+    
+                if (operationCode == 1) {
+                    String cacheName = filename + "readFile" + String.valueOf(offset) + content;
+                
+                    // Update cache with new content and reset validation time
+                    cache.compute(cacheName, (key, entry) -> {
+                        if (entry == null) {
+                            return new CacheEntry(response);
+                        } else {
+                            entry.updateContent(response);
+                            return entry;
+                        }
+                    });
+                } else if (operationCode == 4) {
+                    String cacheName = filename + "fileInfo";
+                
+                    // Update cache with new content and reset validation time
+                    cache.compute(cacheName, (key, entry) -> {
+                        if (entry == null) {
+                            return new CacheEntry(response);
+                        } else {
+                            entry.updateContent(response);
+                            return entry;
+                        }
+                    });
+                }    
+            }
+            return true;
+
+        } catch (SocketTimeoutException e) {
+            // Handle the case where socket.receive times out
+            System.out.println("Socket timeout reached.");
+            return false;
+        } catch (Exception e) {
+            System.out.println("Error receiving response: " + e.getMessage());
+            return false;
+        } finally {
+            if (!responseReceived[0]) return false; // Ensure to cancel timeout task on early exit
+        }
+    }
+
+
+    // implement monitor-specific response handling
+    public boolean monitor_receiveResponse(String filename, int operationCode, int offset, String content, int timeout) throws Exception {
+        final boolean[] responseReceived = {false};
+        final byte[] buffer = new byte[65535];
+        final DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
+
+        socket.setSoTimeout(timeout * 1000); // Set a 5-second timeout for the response
 
         try {
             // System.out.println("before");
@@ -318,10 +379,10 @@ public class Client {
         try {
             boolean success = false;
 
-                while (!success) {
-                    sendRequest(2, filename, offset, content, uniqueReq);
-                    success = receiveResponse(filename, 1, offset, content);
-                }
+            while (!success) {
+                sendRequest(2, filename, offset, content, uniqueReq);
+                success = receiveResponse(filename, 1, offset, content);
+            }
         } catch (Exception e) {
             System.err.println("Error during insert operation: " + e.getMessage());
         }
@@ -351,14 +412,19 @@ public class Client {
         final long endTime = System.currentTimeMillis() + (monitorInterval * 1000);
     
         try {
-            // Preparing and sending the monitor request
-            sendRequest(3, filename, monitorInterval, "", uniqueReq); // Empty string for content as it's not needed
+            // Preparing and sending the monitor request; ensuring it's sent through
+            boolean success = false;
+            while (!success) {
+                sendRequest(3, filename, monitorInterval, "", uniqueReq); // Empty string for content as it's not needed
+                success = receiveResponse(filename, 3, 0, "");
+            }
     
+            
             // Starting a new thread to listen for updates
             // new Thread(() -> {
                 while (System.currentTimeMillis() < endTime) {
                     try {
-                        receiveResponse(filename, 3, 0, ""); // This method handles any incoming updates
+                        monitor_receiveResponse(filename, 3, 0, "", monitorInterval); // This method handles any incoming updates
                     } catch (Exception e) {
                         System.err.println("Error while monitoring updates: " + e.getMessage());
                         break; // Exit the loop in case of an error
@@ -390,7 +456,7 @@ public class Client {
 
                 while (!success) {
                     sendRequest(4, filename, 0, null, uniqueReq); // Offset and content are not needed here.
-                    receiveResponse(filename, 4, 0, null);
+                    success = receiveResponse(filename, 4, 0, null);
                 }
             } catch (Exception e) {
                 System.err.println("Error getting file info: " + e.getMessage());
@@ -412,8 +478,8 @@ public class Client {
             
             while (!success) {
                 sendRequest(5, filename, 0, content, uniqueReq); // Offset is not needed; assuming append happens at the end.
-                receiveResponse(filename, 5, 0, content);
-                }
+                success = receiveResponse(filename, 5, 0, content);
+            }
         } catch (Exception e) {
             System.err.println("Error during append operation: " + e.getMessage());
         }
