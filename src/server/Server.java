@@ -141,14 +141,16 @@ public class Server {
             buffer.get(filenameBytes);
             String filename = new String(filenameBytes);
 
-            int offset = buffer.getInt();
-            byte[] contentToInsert = new byte[buffer.remaining()];
-            buffer.get(contentToInsert);
+            int offset =  buffer.getInt(); 
+            int lengthofbytesToRead = buffer.getInt();
+            byte[] contentToInsert_bytes = new byte[lengthofbytesToRead];
+            buffer.get(contentToInsert_bytes);
+            String contentToInsert = new String(contentToInsert_bytes);
 
             InMemoryFile file = FileHandler.readFromFile(filename);
             if (file != null) {
-                FileHandler.updateFileContent(file, offset, new String(contentToInsert));
-                byte[] updatedFileData = Marshaller.marshall(file);
+                FileHandler.updateFileContent(file, offset, contentToInsert);
+                byte[] updatedFileData = Marshaller.marshall(file.getFileContent());
                 FileHandler.writeToFile(filename, updatedFileData);
                 notifyClientsOfUpdate(filename, file.getFileContent());
 
@@ -235,13 +237,13 @@ public class Server {
             buffer.get(filenameBytes);
             String filename = new String(filenameBytes);
 
-            int ignore = buffer.getInt(); // just reading arbitrarily
+            buffer.getInt(); // just to ignore the extra default "offset" sent by client
             int lengthofbytesToRead = buffer.getInt();
             byte[] contentToAppend_bytes = new byte[lengthofbytesToRead];
             buffer.get(contentToAppend_bytes);
             String contentToAppend = new String(contentToAppend_bytes);
 
-            System.out.println(contentToAppend);
+            // System.out.println(contentToAppend);
 
             // byte[] contentToAppend = new byte[buffer.remaining()];
             // buffer.get(contentToAppend);
@@ -249,9 +251,16 @@ public class Server {
             InMemoryFile file = FileHandler.readFromFile(filename);
             if (file != null) {
                 int offset = file.getFileContent().length();
-                String newContent = new String(contentToAppend);
-                FileHandler.updateFileContent(file, offset, newContent);
-                byte[] updatedFileData = Marshaller.marshall(file);
+                // String newContent = new String(contentToAppend);
+                FileHandler.updateFileContent(file, offset, contentToAppend);
+
+                // System.out.println(file.getFileContent());
+
+                byte[] updatedFileData = Marshaller.marshall(file.getFileContent());
+
+                // String test = new String(updatedFileData);
+                // System.out.println("testing: " + test);
+
                 FileHandler.writeToFile(filename, updatedFileData);
                 notifyClientsOfUpdate(filename, file.getFileContent());
                 String message = "Content appended successfully";
