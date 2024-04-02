@@ -49,7 +49,7 @@ public class Server {
 
     public void listen() throws Exception {
         Random random = new Random();
-        double lossRate = 0.8;
+        double lossRate = 0.5;
 
         running = true;
         System.out.println("Server is running with " + invocationSemantics + " semantics.");
