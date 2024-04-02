@@ -31,6 +31,10 @@ public class FileHandler {
             File file = new File(fileName);
             fis = new FileInputStream(file);
             int fileLength = (int) file.length();
+            if (fileLength == 0) {
+                fis.close();
+                return new InMemoryFile(fileName, "");
+            }
             int fileContentLength = fileLength - Long.BYTES;
             buffer = new byte[fileLength];
             int bytesRead = 0;
@@ -51,7 +55,9 @@ public class FileHandler {
     }
 
     public static String getFileContent(InMemoryFile file, int offset, int numBytesToRead) {
-        if (offset > file.getFileContent().length()) {
+        if (file.getFileContent().length() == 0) {
+            return "";
+        } else if (offset > file.getFileContent().length()) {
             throw new StringIndexOutOfBoundsException("Offset provided exceeds the current file length");
         }
         return file.getFileContent().substring(offset,
