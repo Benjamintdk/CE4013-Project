@@ -141,7 +141,7 @@ public class Server {
             buffer.get(filenameBytes);
             String filename = new String(filenameBytes);
 
-            int offset =  buffer.getInt(); 
+            int offset = buffer.getInt();
             int lengthofbytesToRead = buffer.getInt();
             byte[] contentToInsert_bytes = new byte[lengthofbytesToRead];
             buffer.get(contentToInsert_bytes);
@@ -191,7 +191,7 @@ public class Server {
         List<ClientInfo> clients = monitorSubscriptions.getOrDefault(filename, new ArrayList<>());
         for (ClientInfo client : clients) {
             if (System.currentTimeMillis() > client.expiryTime) {
-                // skkip for the expired subscriptions
+                // skip for the expired subscriptions
                 continue;
             }
             try {
@@ -251,16 +251,8 @@ public class Server {
             InMemoryFile file = FileHandler.readFromFile(filename);
             if (file != null) {
                 int offset = file.getFileContent().length();
-                // String newContent = new String(contentToAppend);
                 FileHandler.updateFileContent(file, offset, contentToAppend);
-
-                // System.out.println(file.getFileContent());
-
                 byte[] updatedFileData = Marshaller.marshall(file.getFileContent());
-
-                // String test = new String(updatedFileData);
-                // System.out.println("testing: " + test);
-
                 FileHandler.writeToFile(filename, updatedFileData);
                 notifyClientsOfUpdate(filename, file.getFileContent());
                 String message = "Content appended successfully";
