@@ -8,6 +8,13 @@
         "type": "java",
         "name": "Server",
         "request": "launch",
+        "mainClass": "server.Server",
+        "projectName": "CE4013-Project_65192d5a"
+    },
+    {
+        "type": "java",
+        "name": "Server",
+        "request": "launch",
         "mainClass": "src.server.Server",
         "projectName": "CE4013-project_4bfbbeba",
         "args": "2002 at-least-once"
