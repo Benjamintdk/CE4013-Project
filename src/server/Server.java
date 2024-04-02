@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.net.InetAddress;
+import java.util.Random;
 
 class ClientInfo {
     InetAddress address;
@@ -47,6 +48,9 @@ public class Server {
     }
 
     public void listen() throws Exception {
+        Random random = new Random();
+        double lossRate = 0.8;
+
         running = true;
         System.out.println("Server is running with " + invocationSemantics + " semantics.");
 
@@ -54,6 +58,11 @@ public class Server {
             byte[] buf = new byte[65535];
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             socket.receive(packet);
+
+            if (random.nextDouble() < lossRate){
+                System.out.println("Packet Lost simulated");
+                continue; // skips processing of the packet received
+            }
 
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
             int requestId = buffer.getInt(); // extracting the request ID
