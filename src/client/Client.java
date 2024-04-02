@@ -69,7 +69,7 @@ public class Client {
 
     // implementing marshalling & sending requests
     private byte[] prepareRequest(int operationCode, String filename, int offset, String content, String requestId) throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + 1 + Integer.BYTES + filename.length() + Integer.BYTES + (content != null ? content.length() : 0) + Integer.BYTES);
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + requestId.length() + 1 + Integer.BYTES + filename.length() + Integer.BYTES + (content != null ? content.length() : 0) + Integer.BYTES);
         buffer.putInt(requestId.length()); // requestID length
         buffer.put(requestId.getBytes()); // Unique request ID for at-most-once invocation semantics
         buffer.put((byte)operationCode); // Operation code
@@ -92,7 +92,7 @@ public class Client {
         DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
     
         // Simulate packet loss
-        double lossProbability = 0.5; // 10% probability for loss
+        double lossProbability = 0.1; // 10% probability for loss
         double probability = new Random().nextDouble();
 
         String temp = String.valueOf(probability);
