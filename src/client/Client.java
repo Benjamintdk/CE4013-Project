@@ -11,8 +11,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.Random;
-
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 class CacheEntry {
     String content;
@@ -48,6 +47,8 @@ public class Client {
     private ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, Boolean> requestHistory = new ConcurrentHashMap<>();
 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
     public Client(String address, int port, int invocationSemantic, long freshnessInterval) throws Exception {
         this.socket = new DatagramSocket();
         this.serverAddress = InetAddress.getByName(address);
@@ -82,66 +83,129 @@ public class Client {
         return buffer.array();
     }
 
+    // public void sendRequest(int operationCode, String filename, int offset, String content, int requestId) throws Exception {
+
+    //     // 1 : at-most-once
+    //     // 0 : at-least-once
+    //     if (invocationSemantic == 1 && requestHistory.containsKey(requestId)) {
+    //         System.out.println("Request ID " + requestId + " has already been processed.");
+    //         return;
+    //     }
+
+    //     byte[] requestBytes = prepareRequest(operationCode, filename, offset, content, requestId);
+    //     DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
+        
+    //     boolean isSuccessful = false;
+    //     double lossProbability = 0.1; // 10% probability for loss
+    //     Random rand = new Random();
+        
+    //     while(!isSuccessful) {
+    //         try {
+    //             Double prob = rand.nextDouble();
+
+    //             String temp = String.valueOf(prob);
+    //             System.out.println(temp);
+
+    //             if (prob >= lossProbability){
+    //                 System.out.println("Client Request Sent!");
+    //                 socket.send(requestPacket);
+    //             } else {
+    //                 System.out.println("Client Request Dropped: Simulated Packet Loss");
+    //             }
+
+    //             socket.setSoTimeout(5000); // Set a 5-second timeout for the response
+    //             requestHistory.put(requestId, true);
+    //             isSuccessful = true;
+                
+    //         } catch (SocketTimeoutException e) {
+    //             System.out.println("Timeout reached, retrying...");
+    //             continue;
+    //         }    
+    //     }
+        
+    // }
+
     public void sendRequest(int operationCode, String filename, int offset, String content, int requestId) throws Exception {
-
-        // 1 : at-most-once
-        // 0 : at-least-once
-        if (invocationSemantic == 1 && requestHistory.containsKey(requestId)) {
-            System.out.println("Request ID " + requestId + " has already been processed.");
-            return;
-        }
-
         byte[] requestBytes = prepareRequest(operationCode, filename, offset, content, requestId);
         DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
-        
-        boolean isSuccessful = false;
-        double lossProbability = 0.05;
-        
-        while(!isSuccessful) {
-            try {
-                Random rand = new Random();
+    
+        // Simulate packet loss
+        double lossProbability = 0.5; // 10% probability for loss
+        double probability = new Random().nextDouble();
 
-                if (rand.nextDouble() >= lossProbability){
-                    System.out.println("Client Request Sent!");
-                    socket.send(requestPacket);
-                } else {
-                    System.out.println("Client Request Dropped: Simulated Packet Loss");
-                }
+        String temp = String.valueOf(probability);
+        System.out.println(temp);
 
-                socket.setSoTimeout(5000); // Set a 5-second timeout for the response
-                requestHistory.put(requestId, true);
-                isSuccessful = true;
-                
-            } catch (SocketTimeoutException e) {
-                System.out.println("Timeout reached, retrying...");
-                continue;
-            }    
+        if (probability < lossProbability) {
+            System.out.println("Client Request Dropped: Simulated Packet Loss");
+            return; // Early return simulates packet loss; request is not sent
         }
-        
+    
+        socket.send(requestPacket);
+        System.out.println("Request sent.");
     }
+    
+
 
     // implementing unmarshalling and receiving responses
-    public void receiveResponse(String filename) throws Exception {
-        byte[] buffer = new byte[65535];
-        DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
-        socket.receive(responsePacket);
-    
-        String response = Marshaller.unmarshallString(Arrays.copyOfRange(responsePacket.getData(), 0, responsePacket.getLength()));
-    
-        if (response.startsWith("Error:")) {
-            System.err.println("Server error: " + response);
-        } else {
-            System.out.println("Server response: " + response);
+    public boolean receiveResponse(String filename, int operationCode, int offset, String content) throws Exception {
+        final boolean[] responseReceived = {false};
+        final byte[] buffer = new byte[65535];
+        final DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
+
+        socket.setSoTimeout(5000); // Set a 5-second timeout for the response
+
+        try {
+            // System.out.println("before");
+            socket.receive(responsePacket); // This call is blocking
+            responseReceived[0] = true;
+
+            // System.out.println("i hv reached!");
+
+            String response = Marshaller.unmarshallString(Arrays.copyOfRange(responsePacket.getData(), 0, responsePacket.getLength()));
             
-            // Update cache with new content and reset validation time
-            cache.compute(filename, (key, entry) -> {
-                if (entry == null) {
-                    return new CacheEntry(response);
-                } else {
-                    entry.updateContent(response);
-                    return entry;
-                }
-            });
+            if (response.startsWith("Error:")) {
+                System.err.println("Server error: " + response);
+            } else {
+                System.out.println("Server response: " + response);
+    
+                if (operationCode == 1) {
+                    String cacheName = filename + "readFile" + String.valueOf(offset) + content;
+                
+                    // Update cache with new content and reset validation time
+                    cache.compute(cacheName, (key, entry) -> {
+                        if (entry == null) {
+                            return new CacheEntry(response);
+                        } else {
+                            entry.updateContent(response);
+                            return entry;
+                        }
+                    });
+                } else if (operationCode == 4) {
+                    String cacheName = filename + "fileInfo";
+                
+                    // Update cache with new content and reset validation time
+                    cache.compute(cacheName, (key, entry) -> {
+                        if (entry == null) {
+                            return new CacheEntry(response);
+                        } else {
+                            entry.updateContent(response);
+                            return entry;
+                        }
+                    });
+                }    
+            }
+            return true;
+
+        } catch (SocketTimeoutException e) {
+            // Handle the case where socket.receive times out
+            System.out.println("Socket timeout reached.");
+            return false;
+        } catch (Exception e) {
+            System.out.println("Error receiving response: " + e.getMessage());
+            return false;
+        } finally {
+            if (!responseReceived[0]) return false; // Ensure to cancel timeout task on early exit
         }
     }
 
@@ -251,8 +315,12 @@ public class Client {
             // Proceed to fetch from the server and update cache
             // Construct and send the request
             try {
-                sendRequest(1, filename, offset, string_bytesToRead, requestId);
-                receiveResponse(cacheName); // Handle the response appropriately
+                boolean success = false;
+
+                while (!success) {
+                    sendRequest(1, filename, offset, string_bytesToRead, requestId);
+                    success = receiveResponse(filename, 1, offset, string_bytesToRead);
+                }
             } catch (Exception e) {
                 System.err.println("Error during operation: " + e.getMessage());
             }
@@ -282,8 +350,12 @@ public class Client {
         String content = scanner.nextLine();
     
         try {
-            sendRequest(2, filename, offset, content, requestId);
-            receiveResponse(filename);
+            boolean success = false;
+
+                while (!success) {
+                    sendRequest(2, filename, offset, content, requestId);
+                    success = receiveResponse(filename, 1, offset, content);
+                }
         } catch (Exception e) {
             System.err.println("Error during insert operation: " + e.getMessage());
         }
@@ -318,7 +390,7 @@ public class Client {
             new Thread(() -> {
                 while (System.currentTimeMillis() < endTime) {
                     try {
-                        receiveResponse(filename); // This method handles any incoming updates
+                        receiveResponse(filename, 3, 0, ""); // This method handles any incoming updates
                     } catch (Exception e) {
                         System.err.println("Error while monitoring updates: " + e.getMessage());
                         break; // Exit the loop in case of an error
@@ -344,8 +416,12 @@ public class Client {
             System.out.println("Cached content: " + cache.get(filename).content);
         } else {
             try {
-                sendRequest(4, filename, 0, null, requestId); // Offset and content are not needed here.
-                receiveResponse(cacheName);
+                boolean success = false;
+
+                while (!success) {
+                    sendRequest(4, filename, 0, null, requestId); // Offset and content are not needed here.
+                    receiveResponse(filename, 4, 0, null);
+                }
             } catch (Exception e) {
                 System.err.println("Error getting file info: " + e.getMessage());
             }
@@ -360,8 +436,12 @@ public class Client {
         String content = scanner.nextLine();
     
         try {
-            sendRequest(5, filename, 0, content, requestId); // Offset is not needed; assuming append happens at the end.
-            receiveResponse(filename);
+            boolean success = false;
+            
+            while (!success) {
+                sendRequest(5, filename, 0, content, requestId); // Offset is not needed; assuming append happens at the end.
+                receiveResponse(filename, 5, 0, content);
+                }
         } catch (Exception e) {
             System.err.println("Error during append operation: " + e.getMessage());
         }
