@@ -72,10 +72,6 @@ public class FileHandler {
         String prefix = file.getFileContent().substring(0, offset);
         String suffix = file.getFileContent().substring(offset, curLength);
 
-        // System.out.println(prefix);
-        // System.out.println(suffix);
-        // System.out.println(prefix + newContent + suffix);
-
         file.setFileContent(prefix + newContent + suffix);
         file.setTimeLastModified(System.currentTimeMillis());
     }
