@@ -235,10 +235,13 @@ public class Server {
             buffer.get(filenameBytes);
             String filename = new String(filenameBytes);
 
+            int ignore = buffer.getInt(); // just reading arbitrarily
             int lengthofbytesToRead = buffer.getInt();
             byte[] contentToAppend_bytes = new byte[lengthofbytesToRead];
             buffer.get(contentToAppend_bytes);
             String contentToAppend = new String(contentToAppend_bytes);
+
+            System.out.println(contentToAppend);
 
             // byte[] contentToAppend = new byte[buffer.remaining()];
             // buffer.get(contentToAppend);
