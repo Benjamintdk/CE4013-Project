@@ -10,6 +10,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.Random;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -93,18 +94,30 @@ public class Client {
         byte[] requestBytes = prepareRequest(operationCode, filename, offset, content, requestId);
         DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
         
-        try {
-            socket.send(requestPacket);
-            if (invocationSemantic == 0) {
+        boolean isSuccessful = false;
+        double lossProbability = 0.05;
+        
+        while(!isSuccessful) {
+            try {
+                Random rand = new Random();
+
+                if (rand.nextDouble() >= lossProbability){
+                    System.out.println("Client Request Sent!");
+                    socket.send(requestPacket);
+                } else {
+                    System.out.println("Client Request Dropped: Simulated Packet Loss");
+                }
+
                 socket.setSoTimeout(5000); // Set a 5-second timeout for the response
-            }
-            requestHistory.put(requestId, true);
-        } catch (SocketTimeoutException e) {
-            if (invocationSemantic == 0) {
+                requestHistory.put(requestId, true);
+                isSuccessful = true;
+                
+            } catch (SocketTimeoutException e) {
                 System.out.println("Timeout reached, retrying...");
-                socket.send(requestPacket); // Retry sending the request
-            }
+                continue;
+            }    
         }
+        
     }
 
     // implementing unmarshalling and receiving responses
