@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -59,7 +58,7 @@ public class Server {
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             socket.receive(packet);
 
-            if (random.nextDouble() < lossRate){
+            if (random.nextDouble() < lossRate) {
                 System.out.println("Packet Lost simulated");
                 continue; // skips processing of the packet received
             }
@@ -70,11 +69,12 @@ public class Server {
             buffer.get(requestIdBytes);
             String requestId = new String(requestIdBytes); // Convert bytes to string
             byte operationCode = buffer.get(); // extracting the operation code
-            
+
             if ("at-most-once".equals(invocationSemantics) && requestHistory.containsKey(requestId)) {
                 byte[] cachedResponse = responseCache.get(requestId);
                 if (cachedResponse != null) {
-                    System.out.println("Sending cached response to " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
+                    System.out.println("Sending cached response to " + packet.getAddress().getHostAddress() + ":"
+                            + packet.getPort());
                     sendPacket(cachedResponse, packet.getAddress(), packet.getPort());
                     continue; // we skip the operation processing for this duplicate request under
                               // "at-most-once" semantics
@@ -127,7 +127,6 @@ public class Server {
             String filename = new String(filenameBytes);
             int offset = buffer.getInt();
             int lengthofbytesToRead = buffer.getInt();
-            ;
             byte[] bytesToReadBytes = new byte[lengthofbytesToRead];
             buffer.get(bytesToReadBytes);
             String bytesToReadString = new String(bytesToReadBytes);
@@ -256,11 +255,6 @@ public class Server {
             buffer.get(contentToAppend_bytes);
             String contentToAppend = new String(contentToAppend_bytes);
 
-            // System.out.println(contentToAppend);
-
-            // byte[] contentToAppend = new byte[buffer.remaining()];
-            // buffer.get(contentToAppend);
-
             InMemoryFile file = FileHandler.readFromFile(filename);
             if (file != null) {
                 int offset = file.getFileContent().length();
@@ -283,15 +277,15 @@ public class Server {
     // cache the response for a given request
     private void cacheResponse(DatagramPacket requestPacket, byte[] responseBytes) {
         ByteBuffer buffer = ByteBuffer.wrap(requestPacket.getData());
-        
+
         // Extract the length of the requestId
         int requestIdLength = buffer.getInt();
-        
+
         // Extract the requestId bytes based on the length and convert to String
         byte[] requestIdBytes = new byte[requestIdLength];
         buffer.get(requestIdBytes);
         String requestId = new String(requestIdBytes);
-        
+
         // Use the string requestId to cache the response
         responseCache.put(requestId, responseBytes); // Use String requestId as the key
     }

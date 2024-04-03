@@ -18,7 +18,7 @@
             "request": "launch",
             "mainClass": "src.server.Server",
             "projectName": "CE4013-project_9ad1dcf9",
-            "args": "2002 at-least-once"
+            "args": "2002 at-most-once"
         },
         {
             "type": "java",
@@ -26,7 +26,7 @@
             "request": "launch",
             "mainClass": "src.server.Server",
             "projectName": "CE4013-project_4bfbbeba",
-            "args": "2002 at-least-once"
+            "args": "2002 at-most-once"
         },
         {
             "type": "java",
@@ -56,7 +56,7 @@
             "request": "launch",
             "mainClass": "src.server.Server",
             "projectName": "CE4013-Project_1fd60710",
-            "args": "2002 at-least-once"
+            "args": "2002 at-most-once"
         }
     ]
 }
