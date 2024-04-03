@@ -10,7 +10,7 @@
             "request": "launch",
             "mainClass": "src.client.Client",
             "projectName": "CE4013-project_9ad1dcf9",
-            "args": "172.17.51.2 2002 0 30"
+            "args": "127.0.0.1 2002 1 5"
         },
         {
             "type": "java",
@@ -34,7 +34,7 @@
             "request": "launch",
             "mainClass": "src.client.Client",
             "projectName": "CE4013-project_4bfbbeba",
-            "args": "172.17.51.2 2002 0 30"
+            "args": "127.0.0.1 2002 1 5"
         },
         {
             "type": "java",
@@ -48,7 +48,7 @@
             "request": "launch",
             "mainClass": "src.client.Client",
             "projectName": "CE4013-Project_1fd60710",
-            "args": "172.17.51.2 2002 0 30"
+            "args": "127.0.0.1 2002 1 5"
         },
         {
             "type": "java",

@@ -47,8 +47,6 @@ public class Server {
     }
 
     public void listen() throws Exception {
-        Random random = new Random();
-        double lossRate = 0.1;
 
         running = true;
         System.out.println("Server is running with " + invocationSemantics + " semantics.");
@@ -57,11 +55,6 @@ public class Server {
             byte[] buf = new byte[65535];
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             socket.receive(packet);
-
-            if (random.nextDouble() < lossRate) {
-                System.out.println("Packet Lost simulated");
-                continue; // skips processing of the packet received
-            }
 
             ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
             int requestIdLength = buffer.getInt(); // Read requestID length first
@@ -115,9 +108,19 @@ public class Server {
     }
 
     private void sendPacket(byte[] data, InetAddress address, int port) throws IOException {
+        // Generate a random number between 0.0 and 1.0
+        double randomValue = Math.random();
+    
+        if (randomValue < 0.8) {
+            System.out.println("Simulated packet loss: packet not sent.");
+            return; 
+        }
+    
+        // Proceed to send the packet as normal if not dropped
         DatagramPacket packet = new DatagramPacket(data, data.length, address, port);
         socket.send(packet);
     }
+    
 
     private void handleReadOperation(ByteBuffer buffer, DatagramPacket requestPacket) {
         try {
