@@ -59,7 +59,6 @@ The client maintains several key data structures for managing communication with
 - **requestHistory**: Tracks processed request IDs to support "at-most-once" semantics.
 - **socket**: A DatagramSocket instance for sending and receiving UDP packets.
 - **serverAddress** and **serverPort**: Server's IP address and port number for establishing communication.
-- **invocationSemantic**: Determines the invocation semantic ("at-least-once" or "at-most-once") for handling requests.
 
 ## Key Methods
 
@@ -91,24 +90,14 @@ The client maintains several key data structures for managing communication with
 
 The client implements caching to enhance performance for read operations. It maintains a cache of recently fetched file contents, checks the freshness of cached data before sending a read request, and updates the cache upon receiving new data from the server.
 
-## Invocation Semantics
-
-The client also supports two invocation semantics:
-
-- **At-least-once**: Ensures that every operation is executed at least once, even at the cost of possible duplication.
-- **At-most-once**: Ensures that operations are executed no more than once, using request history to avoid processing duplicate requests.
-
-This invocation semantics are set when the client is started.
-
 ## Running the Client
 
 To start the Client, use the following command, providing the server's IP address, port number, the invocation semantic flag, and the freshness interval for caching:
 
 ```bash
-java Client <ServerIP> <ServerPort> <InvocationSemanticFlag> <FreshnessInterval>
+java Client <ServerIP> <ServerPort> <FreshnessInterval>
 ```
 
-`InvocationSemanticFlag` : 0 for "at-least-once" ; 1 for "at-most-once"
 `FreshnessInterval` : in seconds
 
 ### Marshalling 

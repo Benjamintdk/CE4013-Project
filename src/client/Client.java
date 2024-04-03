@@ -39,10 +39,6 @@ public class Client {
 
     private String uniqueID = UUID.randomUUID().toString();
 
-    // 1 : at-most-once
-    // 0 : at-least-once
-    private int invocationSemantic;
-
     private long freshnessInterval;
 
     private Scanner scanner;
@@ -52,14 +48,10 @@ public class Client {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    public Client(String address, int port, int invocationSemantic, long freshnessInterval) throws Exception {
+    public Client(String address, int port, long freshnessInterval) throws Exception {
         this.socket = new DatagramSocket();
         this.serverAddress = InetAddress.getByName(address);
         this.serverPort = port;
-        
-        // 1 : at-most-once
-        // 0 : at-least-once
-        this.invocationSemantic = invocationSemantic;
 
         this.freshnessInterval = freshnessInterval;
         
@@ -488,21 +480,14 @@ public class Client {
  
     public static void main(String[] args) throws Exception {
         if (args.length != 4) {
-            System.out.println("Usage: java Client <server IP> <server port> <invocationSemantic> <freshnessInterval>");
-            System.out.println("<invocationSemantic>: 0 - 'at-least-once'; 1 - 'at-most-once'");
+            System.out.println("Usage: java Client <server IP> <server port> <freshnessInterval>");
             System.out.println("<freshnessInterval>: in seconds");
-            return;
-        }
-    
-        int invocationSemantic = Integer.parseInt(args[2]);
-        if (invocationSemantic!= 0 && invocationSemantic != 1) {
-            System.out.println("Invocation semantic must be 0 for 'at-least-once' or 1 for 'at-most-once'.");
             return;
         }
 
         long freshnessInterval = Long.parseLong(args[3] ) * 1000 ;   
     
-        Client client = new Client(args[0], Integer.parseInt(args[1]), invocationSemantic, freshnessInterval);
+        Client client = new Client(args[0], Integer.parseInt(args[1]), freshnessInterval);
         client.start();
     }
 }
