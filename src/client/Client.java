@@ -1,8 +1,6 @@
 package src.client;
 
 import src.utils.Marshaller;
-import src.utils.InMemoryFile;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -11,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.UUID;
-import java.util.Random;
 import java.util.concurrent.*;
 
 class CacheEntry {
@@ -31,7 +28,6 @@ class CacheEntry {
     }
 }
 
-
 public class Client {
     private DatagramSocket socket;
     private InetAddress serverAddress;
@@ -44,9 +40,6 @@ public class Client {
     private Scanner scanner;
 
     private ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, Boolean> requestHistory = new ConcurrentHashMap<>();
-
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public Client(String address, int port, long freshnessInterval) throws Exception {
         this.socket = new DatagramSocket();
@@ -54,54 +47,43 @@ public class Client {
         this.serverPort = port;
 
         this.freshnessInterval = freshnessInterval;
-        
+
         this.scanner = new Scanner(System.in);
     }
 
-
     // implementing marshalling & sending requests
-    private byte[] prepareRequest(int operationCode, String filename, int offset, String content, String requestId) throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + requestId.length() + 1 + Integer.BYTES + filename.length() + Integer.BYTES + (content != null ? content.length() : 0) + Integer.BYTES);
+    private byte[] prepareRequest(int operationCode, String filename, int offset, String content, String requestId)
+            throws Exception {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + requestId.length() + 1 + Integer.BYTES
+                + filename.length() + Integer.BYTES + (content != null ? content.length() : 0) + Integer.BYTES);
         buffer.putInt(requestId.length()); // requestID length
         buffer.put(requestId.getBytes()); // Unique request ID for at-most-once invocation semantics
-        buffer.put((byte)operationCode); // Operation code
+        buffer.put((byte) operationCode); // Operation code
         buffer.putInt(filename.length()); // Filename length
         buffer.put(filename.getBytes()); // Filename
         buffer.putInt(offset); // Offset
-        
+
         if (content != null) {
             buffer.putInt(content.length()); // Content length
             buffer.put(content.getBytes()); // Content
         } else {
             buffer.putInt(0); // Content length for operations without content
         }
-        
+
         return buffer.array();
     }
 
-    public void sendRequest(int operationCode, String filename, int offset, String content, String requestId) throws Exception {
+    public void sendRequest(int operationCode, String filename, int offset, String content, String requestId)
+            throws Exception {
         byte[] requestBytes = prepareRequest(operationCode, filename, offset, content, requestId);
         DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
-    
-        // // Simulate packet loss
-        // double lossProbability = 0.1; // 10% probability for loss
-        // double probability = new Random().nextDouble();
-
-        // String temp = String.valueOf(probability);
-        // System.out.println(temp);
-
-        // if (probability < lossProbability) {
-        //     System.out.println("Client Request Dropped: Simulated Packet Loss");
-        //     return; // Early return simulates packet loss; request is not sent
-        // }
-    
         socket.send(requestPacket);
         System.out.println("Request sent.");
     }
 
     // implementing unmarshalling and receiving responses
     public boolean receiveResponse(String filename, int operationCode, int offset, String content) throws Exception {
-        final boolean[] responseReceived = {false};
+        final boolean[] responseReceived = { false };
         final byte[] buffer = new byte[65535];
         final DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
 
@@ -114,16 +96,17 @@ public class Client {
 
             // System.out.println("i hv reached!");
 
-            String response = Marshaller.unmarshallString(Arrays.copyOfRange(responsePacket.getData(), 0, responsePacket.getLength()));
-            
+            String response = Marshaller
+                    .unmarshallString(Arrays.copyOfRange(responsePacket.getData(), 0, responsePacket.getLength()));
+
             if (response.startsWith("Error:")) {
                 System.err.println("Server error: " + response);
             } else {
                 System.out.println("Server response: " + response);
-    
+
                 if (operationCode == 1) {
                     String cacheName = filename + "readFile" + String.valueOf(offset) + content;
-                
+
                     // Update cache with new content and reset validation time
                     cache.compute(cacheName, (key, entry) -> {
                         if (entry == null) {
@@ -135,7 +118,7 @@ public class Client {
                     });
                 } else if (operationCode == 4) {
                     String cacheName = filename + "fileInfo";
-                
+
                     // Update cache with new content and reset validation time
                     cache.compute(cacheName, (key, entry) -> {
                         if (entry == null) {
@@ -145,7 +128,7 @@ public class Client {
                             return entry;
                         }
                     });
-                }    
+                }
             }
             return true;
 
@@ -157,36 +140,34 @@ public class Client {
             System.out.println("Error receiving response: " + e.getMessage());
             return false;
         } finally {
-            if (!responseReceived[0]) return false; // Ensure to cancel timeout task on early exit
+            if (!responseReceived[0])
+                return false; // Ensure to cancel timeout task on early exit
         }
     }
 
-
     // implement monitor-specific response handling
-    public boolean monitor_receiveResponse(String filename, int operationCode, int offset, String content, int timeout) throws Exception {
-        final boolean[] responseReceived = {false};
+    public boolean monitor_receiveResponse(String filename, int operationCode, int offset, String content, int timeout)
+            throws Exception {
+        final boolean[] responseReceived = { false };
         final byte[] buffer = new byte[65535];
         final DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
 
         socket.setSoTimeout(timeout * 1000); // Set a 5-second timeout for the response
 
         try {
-            // System.out.println("before");
             socket.receive(responsePacket); // This call is blocking
             responseReceived[0] = true;
+            String response = Marshaller
+                    .unmarshallString(Arrays.copyOfRange(responsePacket.getData(), 0, responsePacket.getLength()));
 
-            // System.out.println("i hv reached!");
-
-            String response = Marshaller.unmarshallString(Arrays.copyOfRange(responsePacket.getData(), 0, responsePacket.getLength()));
-            
             if (response.startsWith("Error:")) {
                 System.err.println("Server error: " + response);
             } else {
                 System.out.println("Server response: " + response);
-    
+
                 if (operationCode == 1) {
                     String cacheName = filename + "readFile" + String.valueOf(offset) + content;
-                
+
                     // Update cache with new content and reset validation time
                     cache.compute(cacheName, (key, entry) -> {
                         if (entry == null) {
@@ -198,7 +179,7 @@ public class Client {
                     });
                 } else if (operationCode == 4) {
                     String cacheName = filename + "fileInfo";
-                
+
                     // Update cache with new content and reset validation time
                     cache.compute(cacheName, (key, entry) -> {
                         if (entry == null) {
@@ -208,7 +189,7 @@ public class Client {
                             return entry;
                         }
                     });
-                }    
+                }
             }
             return true;
 
@@ -220,24 +201,24 @@ public class Client {
             System.out.println("Error receiving response: " + e.getMessage());
             return false;
         } finally {
-            if (!responseReceived[0]) return false; // Ensure to cancel timeout task on early exit
+            if (!responseReceived[0])
+                return false; // Ensure to cancel timeout task on early exit
         }
     }
 
-
-    // Implement a method to check if cached content is still fresh based on a predefined freshness interval.
+    // Implement a method to check if cached content is still fresh based on a
+    // predefined freshness interval.
     private boolean isCacheFresh(String filename) {
         CacheEntry entry = cache.get(filename);
         return (System.currentTimeMillis() - entry.lastFetchedTime) < freshnessInterval;
-    }    
-    
+    }
 
     // MAIN INTERFACE
     // Move the while loop logic to the start method
     public void start() {
         int requestId = 1; // Initialize requestId here
-        
-        try{
+
+        try {
             while (true) {
                 System.out.println("\nSelect an operation:");
                 System.out.println("1 - Read file content");
@@ -291,7 +272,6 @@ public class Client {
         }
     }
 
-
     // THE FUNCTIONS
     private void performReadOperation(int requestId) {
         String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
@@ -343,16 +323,12 @@ public class Client {
             }
         }
     }
-    
 
     private void performInsertOperation(int requestId) {
         String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
 
         System.out.println("Enter filename:");
         String filename = scanner.nextLine();
-
-        // System.out.println("Enter offset:");
-        // int offset = scanner.nextInt();
         int offset = -1;
         while (offset < 0) {
             System.out.println("Enter offset:");
@@ -362,12 +338,12 @@ public class Client {
             }
             offset = scanner.nextInt();
         }
-        
+
         scanner.nextLine(); // consume newline
         System.out.println("Enter content to insert:");
-        
+
         String content = scanner.nextLine();
-    
+
         try {
             boolean success = false;
 
@@ -380,15 +356,11 @@ public class Client {
         }
     }
 
-
     private void performMonitorOperation(int requestId) {
         String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
 
         System.out.println("Enter filename to monitor:");
         String filename = scanner.nextLine();
-
-        // System.out.println("Enter monitor interval (in seconds):");
-        // int monitorInterval = scanner.nextInt();
         int monitorInterval = -1;
         while (monitorInterval < 0) {
             System.out.println("Enter monitor interval (in seconds):");
@@ -398,11 +370,11 @@ public class Client {
             }
             monitorInterval = scanner.nextInt();
         }
-        
+
         scanner.nextLine(); // consume newline
 
         final long endTime = System.currentTimeMillis() + (monitorInterval * 1000);
-    
+
         try {
             // Preparing and sending the monitor request; ensuring it's sent through
             boolean success = false;
@@ -410,34 +382,28 @@ public class Client {
                 sendRequest(3, filename, monitorInterval, "", uniqueReq); // Empty string for content as it's not needed
                 success = receiveResponse(filename, 3, 0, "");
             }
-    
-            
+
             // Starting a new thread to listen for updates
-            // new Thread(() -> {
-                while (System.currentTimeMillis() < endTime) {
-                    try {
-                        monitor_receiveResponse(filename, 3, 0, "", monitorInterval); // This method handles any incoming updates
-                    } catch (Exception e) {
-                        System.err.println("Error while monitoring updates: " + e.getMessage());
-                        break; // Exit the loop in case of an error
-                    }
+            while (System.currentTimeMillis() < endTime) {
+                try {
+                    monitor_receiveResponse(filename, 3, 0, "", monitorInterval); // This method handles any incoming
+                                                                                  // updates
+                } catch (Exception e) {
+                    System.err.println("Error while monitoring updates: " + e.getMessage());
+                    break; // Exit the loop in case of an error
                 }
-                System.out.println("Monitoring period has ended.");
-            // }).start();
+            }
+            System.out.println("Monitoring period has ended.");
         } catch (Exception e) {
             System.err.println("Error during monitor operation setup: " + e.getMessage());
         }
     }
-    
-
 
     private void performGetFileInfoOperation(int requestId) {
         String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
 
         System.out.println("Enter filename to get info:");
         String filename = scanner.nextLine();
-
-        String cacheName = filename + "fileInfo";
 
         // Check cache first
         if (cache.containsKey(filename) && isCacheFresh(filename)) {
@@ -455,8 +421,7 @@ public class Client {
             }
         }
     }
-    
-    
+
     private void performAppendContentOperation(int requestId) {
         String uniqueReq = uniqueID + "_" + String.valueOf(requestId);
 
@@ -464,20 +429,20 @@ public class Client {
         String filename = scanner.nextLine();
         System.out.println("Enter content to append:");
         String content = scanner.nextLine();
-    
+
         try {
             boolean success = false;
-            
+
             while (!success) {
-                sendRequest(5, filename, 0, content, uniqueReq); // Offset is not needed; assuming append happens at the end.
+                sendRequest(5, filename, 0, content, uniqueReq); // Offset is not needed; assuming append happens at the
+                                                                 // end.
                 success = receiveResponse(filename, 5, 0, content);
             }
         } catch (Exception e) {
             System.err.println("Error during append operation: " + e.getMessage());
         }
     }
-    
- 
+
     public static void main(String[] args) throws Exception {
         if (args.length != 4) {
             System.out.println("Usage: java Client <server IP> <server port> <freshnessInterval>");
@@ -485,8 +450,8 @@ public class Client {
             return;
         }
 
-        long freshnessInterval = Long.parseLong(args[3] ) * 1000 ;   
-    
+        long freshnessInterval = Long.parseLong(args[3]) * 1000;
+
         Client client = new Client(args[0], Integer.parseInt(args[1]), freshnessInterval);
         client.start();
     }
