@@ -35,7 +35,7 @@ public class Server {
     private String invocationSemantics; // "at-least-once" or "at-most-once"
 
     private ConcurrentHashMap<String, List<ClientInfo>> monitorSubscriptions;
-    private ConcurrentHashMap<String, Long> requestHistory; // caching of the responses for idempotent operations
+    private ConcurrentHashMap<String, Long> requestHistory; // caching of the requests for "at-most-once"
     private ConcurrentHashMap<String, byte[]> responseCache; // help keep track of handled request IDs
 
     public Server(int port, String invocationSemantics) throws Exception {
