@@ -306,6 +306,9 @@ public class Server {
 
     // cache the response for a given request
     private void cacheResponse(DatagramPacket requestPacket, byte[] responseBytes) {
+        if ("at-least-once".equals(invocationSemantics)) {
+            return;
+        }
         ByteBuffer buffer = ByteBuffer.wrap(requestPacket.getData());
 
         // Extract the length of the requestId
