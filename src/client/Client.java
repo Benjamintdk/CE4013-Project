@@ -8,6 +8,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.*;
 
@@ -81,9 +82,6 @@ public class Client {
         // Simulate packet loss
         double lossProbability = 0.1; // 10% probability for loss
         double probability = new Random().nextDouble();
-
-        String temp = String.valueOf(probability);
-        System.out.println(temp);
 
         if (probability < lossProbability) {
             System.out.println("Client Request Dropped: Simulated Packet Loss");
