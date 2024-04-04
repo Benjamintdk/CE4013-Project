@@ -13,9 +13,14 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.net.InetAddress;
 import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 class ClientInfo {
     InetAddress address;
@@ -37,6 +42,7 @@ public class Server {
     private ConcurrentHashMap<String, List<ClientInfo>> monitorSubscriptions;
     private ConcurrentHashMap<String, Long> requestHistory; // caching of the requests for "at-most-once"
     private ConcurrentHashMap<String, byte[]> responseCache; // help keep track of handled request IDs
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public Server(int port, String invocationSemantics) throws Exception {
         this.socket = new DatagramSocket(port);
@@ -44,6 +50,27 @@ public class Server {
         this.monitorSubscriptions = new ConcurrentHashMap<>();
         this.responseCache = new ConcurrentHashMap<>();
         this.requestHistory = new ConcurrentHashMap<>();
+
+        scheduleCacheCleanup();
+    }
+    private void scheduleCacheCleanup() {
+        scheduler.scheduleAtFixedRate(() -> {
+            long expiryThreshold = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
+            
+            // collect expired request IDs
+            List<String> expiredRequestIds = requestHistory.entrySet().stream()
+                    .filter(entry -> entry.getValue() < expiryThreshold)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+            // remove expired requests from requestHistory
+            expiredRequestIds.forEach(requestHistory::remove);
+
+            // remove corresponding entries from responseCache
+            expiredRequestIds.forEach(responseCache::remove);
+            
+            System.out.println("Removed expired requestIDs");
+        }, 0, 1, TimeUnit.HOURS); // start now and repeat every hour
     }
 
     public void listen() throws Exception {
