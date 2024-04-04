@@ -329,6 +329,7 @@ public class Server {
             DatagramPacket responsePacket = new DatagramPacket(errorResponse, errorResponse.length, packet.getAddress(),
                     packet.getPort());
             socket.send(responsePacket);
+            cacheResponse(packet, errorResponse);
         } catch (IOException e) {
             System.err.println("Failed to send error response: " + e.getMessage());
         }
