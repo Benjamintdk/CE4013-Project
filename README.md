@@ -2,7 +2,7 @@
 
 # Server Implementation Details
 
-This section provides an overview of the server class implementation for remote file access based on a client-server architecture. The server supports various file operations executed through UDP communication. 
+This section provides an overview of the server class implementation for remote file access based on a client-server architecture. The server supports various file operations executed through UDP communication.
 
 ## Server Class Overview
 
@@ -69,7 +69,7 @@ The client maintains several key data structures for managing communication with
 ### User Interface Options
 
 - **1: Read File Content**: Allows users to input a filename, offset, and the number of bytes to be read within the file.
-- **2: Insert Content into a File**: Allows users to input a filename, offset, and content to be inserted into the file. 
+- **2: Insert Content into a File**: Allows users to input a filename, offset, and content to be inserted into the file.
 - **3: Monitor File Updates**: Allows users to input a filename and monitor interval to track any changes to the file during the provided interval duration.
 - **4: Get File Information**: This is the idempotent function implemented by our team. Users can input a filename and will be returned details about the given file.
 - **5: Append File Content**: This is the non-idempotent function implemented by our team. Users can input a filename and the content to be appended to the end of the given file.
@@ -79,7 +79,6 @@ The client maintains several key data structures for managing communication with
 
 - **sendRequest()** and **prepareRequest**: Prepares and sends a request to the server based on the selected operation, filename, offset, content, and request ID. Supports "at-most-once" semantics by checking the request history.
 - **receiveResponse()**: Receives a response from the server, updates the cache if necessary, and displays the server's reply on the screen.
-
 
 ### Operation Handling
 
@@ -92,7 +91,7 @@ The client implements caching to enhance performance for read operations. It mai
 
 ## Running the Client
 
-To start the Client, use the following command, providing the server's IP address, port number, the invocation semantic flag, and the freshness interval for caching:
+To start the Client, use the following command, providing the server IP address, port number, the invocation semantic flag, and the freshness interval for caching:
 
 ```bash
 java Client <ServerIP> <ServerPort> <FreshnessInterval>
@@ -100,17 +99,17 @@ java Client <ServerIP> <ServerPort> <FreshnessInterval>
 
 `FreshnessInterval` : in seconds
 
-### Marshalling 
+### Marshalling
 
-The *Marshaller* is the class responsible for performing all marshalling and unmarshalling of data. All methods from this class are static. 
+The _Marshaller_ is the class responsible for performing all marshalling and unmarshalling of data. All methods from this class are static.
 
-To marshall any data, we simply call the *marshall method*:
+To marshall any data, we simply call the _marshall method_:
 
-```Marshaller.marshall(your_data)```
+`Marshaller.marshall(your_data)`
 
-Currently, the types of supported data types for marshalling are integers, longs, strings and [File](#file). This was implemented using method overloading. 
+Currently, the types of supported data types for marshalling are integers, longs, strings and [File](#file). This was implemented using method overloading.
 
-To unmarshall any data, we need to know the datatype which we are unmarshalling to beforehand. Similarly as before, there are the 4 supported data types that can be unmarshalled. All unmarshalling methods receive a byte array (`byte[]`) as a parameter. 
+To unmarshall any data, we need to know the datatype which we are unmarshalling to beforehand. Similarly as before, there are the 4 supported data types that can be unmarshalled. All unmarshalling methods receive a byte array (`byte[]`) as a parameter.
 
 ```
 /* Unmarshall file */
@@ -128,22 +127,22 @@ long value = Marshaller.unmarshellLong(your_long_bytes)
 
 ### FileHandler
 
-The *FileHandler* class is the class responsible for handling all utilities relating to file I/O operations. All methods from this class are static. 
+The _FileHandler_ class is the class responsible for handling all utilities relating to file I/O operations. All methods from this class are static.
 
 The static methods in this class include:
 
-1) readFromFile
-2) writeToFile
-3) getFileContent
-4) updateFileContent
+1. readFromFile
+2. writeToFile
+3. getFileContent
+4. updateFileContent
 
 ### File
 
-The *File* class is a container class to hold all attributes of a class. The 3 attributes of a *File* object are:
+The _File_ class is a container class to hold all attributes of a class. The 3 attributes of a _File_ object are:
 
-1) fileName
-2) fileContent
-3) timeLastModified
+1. fileName
+2. fileContent
+3. timeLastModified
 
 There are 2 possible ways to initialize it:
 

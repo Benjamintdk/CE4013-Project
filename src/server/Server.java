@@ -8,15 +8,19 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.net.InetAddress;
 import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 class ClientInfo {
     InetAddress address;
@@ -36,8 +40,9 @@ public class Server {
     private String invocationSemantics; // "at-least-once" or "at-most-once"
 
     private ConcurrentHashMap<String, List<ClientInfo>> monitorSubscriptions;
-    private ConcurrentHashMap<String, Long> requestHistory; // caching of the responses for idempotent operations
+    private ConcurrentHashMap<String, Long> requestHistory; // caching of the requests for "at-most-once"
     private ConcurrentHashMap<String, byte[]> responseCache; // help keep track of handled request IDs
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public Server(int port, String invocationSemantics) throws Exception {
         this.socket = new DatagramSocket(port);
@@ -45,6 +50,27 @@ public class Server {
         this.monitorSubscriptions = new ConcurrentHashMap<>();
         this.responseCache = new ConcurrentHashMap<>();
         this.requestHistory = new ConcurrentHashMap<>();
+
+        scheduleCacheCleanup();
+    }
+    private void scheduleCacheCleanup() {
+        scheduler.scheduleAtFixedRate(() -> {
+            long expiryThreshold = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
+            
+            // collect expired request IDs
+            List<String> expiredRequestIds = requestHistory.entrySet().stream()
+                    .filter(entry -> entry.getValue() < expiryThreshold)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+            // remove expired requests from requestHistory
+            expiredRequestIds.forEach(requestHistory::remove);
+
+            // remove corresponding entries from responseCache
+            expiredRequestIds.forEach(responseCache::remove);
+            
+            System.out.println("Removed expired requestIDs");
+        }, 0, 1, TimeUnit.HOURS); // start now and repeat every hour
     }
 
     public void listen() throws Exception {
@@ -63,11 +89,12 @@ public class Server {
             buffer.get(requestIdBytes);
             String requestId = new String(requestIdBytes); // Convert bytes to string
             byte operationCode = buffer.get(); // extracting the operation code
-            
+
             if ("at-most-once".equals(invocationSemantics) && requestHistory.containsKey(requestId)) {
                 byte[] cachedResponse = responseCache.get(requestId);
                 if (cachedResponse != null) {
-                    System.out.println("Sending cached response to " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
+                    System.out.println("Sending cached response to " + packet.getAddress().getHostAddress() + ":"
+                            + packet.getPort());
                     sendPacket(cachedResponse, packet.getAddress(), packet.getPort());
                     continue; // we skip the operation processing for this duplicate request under
                               // "at-most-once" semantics
@@ -130,7 +157,6 @@ public class Server {
             String filename = new String(filenameBytes);
             int offset = buffer.getInt();
             int lengthofbytesToRead = buffer.getInt();
-            ;
             byte[] bytesToReadBytes = new byte[lengthofbytesToRead];
             buffer.get(bytesToReadBytes);
             String bytesToReadString = new String(bytesToReadBytes);
@@ -259,11 +285,6 @@ public class Server {
             buffer.get(contentToAppend_bytes);
             String contentToAppend = new String(contentToAppend_bytes);
 
-            // System.out.println(contentToAppend);
-
-            // byte[] contentToAppend = new byte[buffer.remaining()];
-            // buffer.get(contentToAppend);
-
             InMemoryFile file = FileHandler.readFromFile(filename);
             if (file != null) {
                 int offset = file.getFileContent().length();
@@ -286,15 +307,15 @@ public class Server {
     // cache the response for a given request
     private void cacheResponse(DatagramPacket requestPacket, byte[] responseBytes) {
         ByteBuffer buffer = ByteBuffer.wrap(requestPacket.getData());
-        
+
         // Extract the length of the requestId
         int requestIdLength = buffer.getInt();
-        
+
         // Extract the requestId bytes based on the length and convert to String
         byte[] requestIdBytes = new byte[requestIdLength];
         buffer.get(requestIdBytes);
         String requestId = new String(requestIdBytes);
-        
+
         // Use the string requestId to cache the response
         responseCache.put(requestId, responseBytes); // Use String requestId as the key
     }
