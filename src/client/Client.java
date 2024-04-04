@@ -83,17 +83,17 @@ public class Client {
         byte[] requestBytes = prepareRequest(operationCode, filename, offset, content, requestId);
         DatagramPacket requestPacket = new DatagramPacket(requestBytes, requestBytes.length, serverAddress, serverPort);
     
-        // // Simulate packet loss
-        // double lossProbability = 0.1; // 10% probability for loss
-        // double probability = new Random().nextDouble();
+        // Simulate packet loss
+        double lossProbability = 0.1; // 10% probability for loss
+        double probability = new Random().nextDouble();
 
-        // String temp = String.valueOf(probability);
-        // System.out.println(temp);
+        String temp = String.valueOf(probability);
+        System.out.println(temp);
 
-        // if (probability < lossProbability) {
-        //     System.out.println("Client Request Dropped: Simulated Packet Loss");
-        //     return; // Early return simulates packet loss; request is not sent
-        // }
+        if (probability < lossProbability) {
+            System.out.println("Client Request Dropped: Simulated Packet Loss");
+            return; // Early return simulates packet loss; request is not sent
+        }
     
         socket.send(requestPacket);
         System.out.println("Request sent.");
