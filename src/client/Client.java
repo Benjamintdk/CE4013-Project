@@ -455,13 +455,13 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 4) {
+        if (args.length != 3) {
             System.out.println("Usage: java Client <server IP> <server port> <freshnessInterval>");
             System.out.println("<freshnessInterval>: in seconds");
             return;
         }
 
-        long freshnessInterval = Long.parseLong(args[3]) * 1000;
+        long freshnessInterval = Long.parseLong(args[2]) * 1000;
 
         Client client = new Client(args[0], Integer.parseInt(args[1]), freshnessInterval);
         client.start();
